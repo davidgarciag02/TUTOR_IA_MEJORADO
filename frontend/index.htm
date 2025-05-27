@@ -109,6 +109,15 @@
             <div class="mt-2 text-xs text-gray-500 flex items-center">
                 <i class="fas fa-info-circle mr-1"></i> Press Enter to send or click the button
             </div>
+            
+            <!-- File upload -->
+            <div class="mt-4 flex items-center space-x-3">
+                <input type="file" id="problem-upload" accept="image/*" class="hidden">
+                <button id="select-file-btn" type="button" class="bg-blue-600 text-white px-4 py-2 rounded-lg">
+                    <i class="fas fa-upload mr-2"></i> Upload Problem Image
+                </button>
+                <span id="selected-file-name" class="text-gray-700"></span>
+            </div>
         </div>
     </div>
     
@@ -119,7 +128,6 @@
         </div>
     </footer>
 
-<!-- Sustituye solo la función sendMessage() en tu script -->
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const chatContainer = document.querySelector('.chat-container');
@@ -167,6 +175,34 @@
                 }, 500);
             }
 
+            // Handle file upload for math/physics problems
+            const fileInput = document.getElementById('problem-upload');
+            const selectFileBtn = document.getElementById('select-file-btn');
+            const selectedFileName = document.getElementById('selected-file-name');
+
+            selectFileBtn.addEventListener('click', () => fileInput.click());
+
+            fileInput.addEventListener('change', async function () {
+                if (fileInput.files.length > 0) {
+                    selectedFileName.textContent = fileInput.files[0].name;
+                    
+                    const formData = new FormData();
+                    formData.append('problem_image', fileInput.files[0]);
+
+                    try {
+                        const response = await fetch('http://localhost:5000/upload_problem', {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        const data = await response.json();
+                        addMessage('ai', `Extracted info: ${data.text || 'No data found'}`);
+                    } catch (error) {
+                        addMessage('ai', 'Error uploading the image');
+                    }
+                }
+            });
+
             function addMessage(sender, text) {
                 const messageDiv = document.createElement('div');
                 messageDiv.classList.add('message', 'mb-4');
@@ -188,18 +224,15 @@
                             </div>
                         </div>
                     `;
-                } else if (sender === 'system') {
-                    messageDiv.innerHTML = `
-                        <div class="flex justify-center">
-                            <div class="bg-blue-100 text-blue-800 px-4 py-2 rounded-lg text-sm max-w-xs md:max-w-md">
-                                <i class="fas fa-info-circle mr-1"></i> ${text}
-                            </div>
-                        </div>
-                    `;
                 }
 
                 chatContainer.appendChild(messageDiv);
                 chatContainer.scrollTop = chatContainer.scrollHeight;
+
+                if (window.MathJax) {
+                    MathJax.typesetPromise([messageDiv]);
+}
+
             }
 
             sendBtn.addEventListener('click', sendMessage);
@@ -210,6 +243,13 @@
             });
         });
     </script>
+<script>
+    window.MathJax = {
+        tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+        svg: { fontCache: 'global' }
+    };
+    </script>
+    <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
 </body>
 </html>

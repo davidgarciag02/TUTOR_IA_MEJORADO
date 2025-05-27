@@ -1,1 +1,7 @@
 venv/
+env/
+virtualenv/
+*.json
+*.csv
+*.xlsx
+keys.py
